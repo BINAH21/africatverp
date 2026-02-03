@@ -5,6 +5,7 @@ export type JournalistStatus = 'active' | 'inactive' | 'on_leave' | 'suspended' 
 export type JournalistType = 'journalist' | 'reporter' | 'correspondent' | 'editor' | 'photographer' | 'videographer' | 'anchor' | 'producer';
 export type ExperienceLevel = 'junior' | 'mid' | 'senior' | 'expert';
 export type AssignmentStatus = 'pending' | 'in_progress' | 'submitted' | 'reviewed' | 'published' | 'rejected' | 'cancelled';
+export type AssignmentPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type AwardType = 'excellence' | 'breaking_news' | 'investigative' | 'feature' | 'photography' | 'video' | 'lifetime_achievement' | 'community_service';
 
 export interface Journalist {
@@ -121,7 +122,7 @@ export interface Assignment {
   journalistName: string;
   assignedBy: string;
   assignedByName: string;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  priority: AssignmentPriority;
   status: AssignmentStatus;
   dueDate: Date;
   completedDate?: Date;
