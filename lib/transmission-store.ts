@@ -651,7 +651,7 @@ export const useTransmissionStore = create<TransmissionStore>()((set, get) => ({
     set((state) => {
       const updated = state.remoteControls.map((c) =>
         c.id === command.id
-          ? { ...c, status: 'executing', executedAt: new Date() }
+          ? { ...c, status: 'executing' as const, executedAt: new Date() }
           : c
       );
       saveToStorage('transmission-remote-controls', updated);
