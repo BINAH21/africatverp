@@ -37,6 +37,7 @@ import {
   NewsTag,
   NewsComment,
   NewsAssignment,
+  UserRole,
 } from '@/lib/news-store';
 import { useAppStore } from '@/lib/store';
 
@@ -905,7 +906,7 @@ export default function NewsPage() {
                     keywords: [],
                     authorId: user?.id || '1',
                     authorName: user?.name || 'System',
-                    accessRoles: ['admin', 'editor', 'publisher', 'viewer'],
+                    accessRoles: ['admin', 'editor', 'publisher', 'viewer'] as UserRole[],
                     isPublic: true,
                     requiresSubscription: false,
                     socialMediaPublished: {
