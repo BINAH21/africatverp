@@ -609,8 +609,8 @@ export const useTransmissionStore = create<TransmissionStore>()((set, get) => ({
     const system = get().backupSystems.find((s) => s.id === backupSystemId);
     if (!system) return;
     
-    get().updateTransmitter(system.primaryTransmitterId, { status: 'backup' });
-    get().updateTransmitter(system.backupTransmitterId, { status: 'online' });
+    get().updateTransmitter(system.primaryTransmitterId, { status: 'backup' as const });
+    get().updateTransmitter(system.backupTransmitterId, { status: 'online' as const });
     
     get().updateBackupSystem(backupSystemId, {
       lastSwitch: new Date(),
@@ -636,7 +636,7 @@ export const useTransmissionStore = create<TransmissionStore>()((set, get) => ({
       ...commandData,
       id: Date.now().toString(),
       requestedAt: new Date(),
-      status: 'pending',
+      status: 'pending' as const,
     };
     
     set((state) => {
@@ -663,18 +663,18 @@ export const useTransmissionStore = create<TransmissionStore>()((set, get) => ({
     set((state) => {
       const updated = state.remoteControls.map((c) =>
         c.id === command.id
-          ? { ...c, status: 'completed' }
+          ? { ...c, status: 'completed' as const }
           : c
       );
       saveToStorage('transmission-remote-controls', updated);
       
       // Update transmitter based on command
       if (command.command === 'power_on') {
-        get().updateTransmitter(command.transmitterId, { status: 'online' });
+        get().updateTransmitter(command.transmitterId, { status: 'online' as const });
       } else if (command.command === 'power_off') {
-        get().updateTransmitter(command.transmitterId, { status: 'offline' });
+        get().updateTransmitter(command.transmitterId, { status: 'offline' as const });
       } else if (command.command === 'standby') {
-        get().updateTransmitter(command.transmitterId, { status: 'standby' });
+        get().updateTransmitter(command.transmitterId, { status: 'standby' as const });
       }
       
       return { remoteControls: updated };
@@ -807,7 +807,7 @@ export const useTransmissionStore = create<TransmissionStore>()((set, get) => ({
   
   // Emergency Procedures
   emergencyShutdown: (transmitterId, reason) => {
-    get().updateTransmitter(transmitterId, { status: 'offline' });
+    get().updateTransmitter(transmitterId, { status: 'offline' as const });
     
     get().createAlert({
       type: 'equipment_failure',
