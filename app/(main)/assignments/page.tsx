@@ -17,7 +17,7 @@ import {
   Newspaper, Download, Upload, Filter as FilterIcon, SortAsc, SortDesc,
   Paperclip, MessageCircle, Clock as ClockIcon, Calendar as CalendarIcon,
   Flag, Archive, Inbox, Send as SendIcon, Repeat, Zap, Award, Users,
-  Columns, TableIcon, Kanban, Timeline, LayoutGrid, LayoutList,
+  Columns, TableIcon, Kanban, LayoutGrid, LayoutList,
 } from 'lucide-react';
 import {
   useJournalistStore,
