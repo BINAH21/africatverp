@@ -256,7 +256,6 @@ const loadFromStorage = <T>(key: string, defaultValue: T[]): T[] => {
       recordingDate: item.recordingDate ? new Date(item.recordingDate) : new Date(),
       startTime: item.startTime ? new Date(item.startTime) : new Date(),
       endTime: item.endTime ? new Date(item.endTime) : undefined,
-      archivedAt: new Date(item.archivedAt),
       timestamp: item.timestamp ? new Date(item.timestamp) : new Date(),
       createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
       completedAt: item.completedAt ? new Date(item.completedAt) : undefined,
