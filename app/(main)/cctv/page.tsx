@@ -8,7 +8,7 @@ import {
   Plus, Edit, Trash2, Search, Filter, Eye, X, RefreshCw, MoreVertical,
   Bell, AlertTriangle, CheckCircle, XCircle, Wifi, WifiOff, Activity,
   Clock, Calendar, MapPin, Users, User, Shield, Lock, Unlock, Key, UserCheck,
-  Database, Server, CloudDownload, CloudUpload, Archive, Folder, FolderOpen,
+  Database, Server, DownloadCloud, UploadCloud, Archive, Folder, FolderOpen,
   Maximize2, Minimize2, Grid, List, Zap, Target, Crosshair, Film,
   Image, Monitor, Disc, HardDriveDownload, Save, Share2, Send, Copy,
   BarChart3, LineChart, PieChart, TrendingUp, TrendingDown, DollarSign,
@@ -83,7 +83,7 @@ interface AccessLog {
   userId: string;
   userName: string;
   userRole: string;
-  action: 'view' | 'download' | 'export' | 'delete' | 'configure' | 'playback';
+  action: 'view' | 'download' | 'export' | 'delete' | 'configure' | 'playback' | 'record';
   timestamp: Date;
   ipAddress: string;
   deviceInfo: string;
@@ -489,4 +489,19 @@ export default function CCTVPage() {
         {[
           { label: 'Total Cameras', value: statistics.total, icon: Camera, color: 'bg-blue-500', trend: null },
           { label: 'Online', value: statistics.online, icon: CheckCircle, color: 'bg-green-500', trend: 'up' },
-... (file continues unchanged)
+        ].map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className="glossy-card rounded-2xl p-4">
+              <div className={`${stat.color} w-10 h-10 rounded-lg flex items-center justify-center mb-3`}>
+                <Icon className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-sm text-gray-500">{stat.label}</div>
+              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
