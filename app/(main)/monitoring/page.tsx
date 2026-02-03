@@ -117,7 +117,6 @@ export default function MonitoringPage() {
     sessions: liveStreamSessions,
     activeSession,
     getActiveSessions,
-    getSessionsByStatus,
   } = useLiveStreamingStore();
 
   // State management
