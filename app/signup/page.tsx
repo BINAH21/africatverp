@@ -3,25 +3,23 @@
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '@/components/Logo';
-import { Mail, Lock, Eye, EyeOff, User, AlertCircle, Loader2, Globe, Shield, ChevronDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Phone, User, AlertCircle, Loader2, Globe, ChevronDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { register, socialAuthenticate } from '@/lib/auth';
+import { socialAuthenticate } from '@/lib/auth';
 import { useAppStore } from '@/lib/store';
-import { GoogleIcon, FacebookIcon, InstagramIcon, TwitterIcon, LinkedInIcon } from '@/components/SocialIcons';
+import { GoogleIcon } from '@/components/SocialIcons';
 
 export default function SignupPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { setUser, checkAuth } = useAppStore();
   
-  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: '',
+    phoneNumber: '',
     role: 'User',
     terms: false,
   });
@@ -32,13 +30,8 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.phoneNumber) {
       setError('Please fill in all required fields');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
       return;
     }
 
@@ -50,36 +43,24 @@ export default function SignupPage() {
     setLoading(true);
     
     try {
-      const result = await register(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.role
-      );
-      
-      if (result.success && result.user) {
-        setUser(result.user);
-        checkAuth();
-        router.push('/dashboard');
-      } else {
-        setError(result.error || 'Registration failed');
-      }
+      // Phone number registration logic would go here
+      // For now, we'll just show an error that this feature is coming soon
+      setError('Phone number registration is coming soon. Please use Google sign-up.');
+      setLoading(false);
     } catch (err) {
       setError('An error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
 
-  const handleSocialSignup = async (provider: 'google' | 'facebook' | 'instagram' | 'linkedin') => {
+  const handleGoogleSignup = async () => {
     setError(null);
     
     try {
-      // Redirect to OAuth initiation endpoint
-      // This will redirect to the provider's OAuth page
-      window.location.href = `/api/auth/oauth/${provider}`;
+      // Redirect to Google OAuth initiation endpoint
+      window.location.href = `/api/auth/oauth/google`;
     } catch (err) {
-      setError('Failed to initiate OAuth flow. Please try again.');
+      setError('Failed to initiate Google sign-up. Please try again.');
     }
   };
 
@@ -211,7 +192,7 @@ export default function SignupPage() {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{decodeURIComponent(urlError)}</p>
                       <p className="text-xs mt-1 text-yellow-700">
-                        OAuth is optional. You can still create an account with email and password.
+                        OAuth is optional. You can still create an account with phone number.
                       </p>
                     </div>
                   </motion.div>
@@ -261,51 +242,21 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* Email Field */}
+              {/* Phone Number Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                  Phone Number
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Enter your email"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    placeholder="Enter your phone number"
                     disabled={loading}
                     className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
                   />
-                </div>
-              </div>
-
-              {/* Password Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Create a password"
-                    disabled={loading}
-                    className="pl-10 pr-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={loading}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
                 </div>
               </div>
 
@@ -359,29 +310,21 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              <div className="flex justify-center gap-3">
-                {[
-                  { name: 'Google', provider: 'google' as const, Icon: GoogleIcon, color: 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 hover:border-gray-400' },
-                  { name: 'Facebook', provider: 'facebook' as const, Icon: FacebookIcon, color: 'bg-[#1877F2] hover:bg-[#166FE5] text-white' },
-                  { name: 'Instagram', provider: 'instagram' as const, Icon: InstagramIcon, color: 'bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] hover:opacity-90 text-white' },
-                  { name: 'LinkedIn', provider: 'linkedin' as const, Icon: LinkedInIcon, color: 'bg-[#0077B5] hover:bg-[#006399] text-white' },
-                ].map((item, index) => (
-                  <motion.button
-                    key={item.name}
-                    type="button"
-                    onClick={() => handleSocialSignup(item.provider)}
-                    disabled={loading}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
-                    whileHover={!loading ? { scale: 1.1, y: -2 } : {}}
-                    whileTap={!loading ? { scale: 0.9 } : {}}
-                    className={`w-12 h-12 rounded-full ${item.color} flex items-center justify-center shadow-md transition-all disabled:opacity-50`}
-                    title={item.name}
-                  >
-                    <item.Icon className="w-5 h-5" />
-                  </motion.button>
-                ))}
+              <div className="flex justify-center">
+                <motion.button
+                  type="button"
+                  onClick={handleGoogleSignup}
+                  disabled={loading}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4 }}
+                  whileHover={!loading ? { scale: 1.1, y: -2 } : {}}
+                  whileTap={!loading ? { scale: 0.9 } : {}}
+                  className="w-12 h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 hover:border-gray-400 flex items-center justify-center shadow-md transition-all disabled:opacity-50"
+                  title="Google"
+                >
+                  <GoogleIcon className="w-5 h-5" />
+                </motion.button>
               </div>
 
               {/* Login Link */}
