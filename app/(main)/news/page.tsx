@@ -900,6 +900,7 @@ export default function NewsPage() {
                     priority: (formData.get('priority') as NewsPriority) || 'normal',
                     isBreakingNews: formData.get('isBreakingNews') === 'on',
                     isFeatured: formData.get('isFeatured') === 'on',
+                    isExclusive: false,
                     categoryId: formData.get('categoryId') as string,
                     categoryName: categories.find(c => c.id === formData.get('categoryId'))?.name || '',
                     tags: (formData.get('tags') as string).split(',').map(t => t.trim()).filter(Boolean),
@@ -921,6 +922,7 @@ export default function NewsPage() {
                     videos: [],
                     audioFiles: [],
                     documents: [],
+                    lastModifiedBy: user?.name || 'System',
                   };
                   
                   if (editingArticle) {
