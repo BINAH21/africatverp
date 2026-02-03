@@ -3,6 +3,7 @@
 export interface User {
   id: string;
   email: string;
+  phoneNumber?: string;
   name: string;
   role: string;
   avatar?: string;
@@ -152,11 +153,11 @@ export const clearFailedAttempts = (email: string) => {
 
 // Mock authentication (replace with real API calls)
 export const authenticate = async (
-  email: string,
+  emailOrPhone: string,
   password: string
 ): Promise<{ success: boolean; user?: User; error?: string }> => {
   // Check rate limit first
-  const rateLimit = checkRateLimit(email);
+  const rateLimit = checkRateLimit(emailOrPhone);
   if (!rateLimit.allowed) {
     return { success: false, error: rateLimit.message || 'Account is locked' };
   }
@@ -186,17 +187,39 @@ export const authenticate = async (
         provider: 'email',
       },
     },
+    'malgadi@africatv.com': {
+      password: 'mohammedahmedk',
+      user: {
+        id: '3',
+        email: 'malgadi@africatv.com',
+        phoneNumber: '0987760808',
+        name: 'Malgadi User',
+        role: 'User',
+        provider: 'email',
+      },
+    },
+    '0987760808': {
+      password: 'mohammedahmedk',
+      user: {
+        id: '3',
+        email: 'malgadi@africatv.com',
+        phoneNumber: '0987760808',
+        name: 'Malgadi User',
+        role: 'User',
+        provider: 'email',
+      },
+    },
   };
   
-  const userData = mockUsers[email.toLowerCase()];
+  const userData = mockUsers[emailOrPhone.toLowerCase()];
   
   if (!userData || userData.password !== password) {
-    recordFailedAttempt(email);
-    return { success: false, error: 'Invalid email or password' };
+    recordFailedAttempt(emailOrPhone);
+    return { success: false, error: 'Invalid email/phone or password' };
   }
   
   // Clear failed attempts on success
-  clearFailedAttempts(email);
+  clearFailedAttempts(emailOrPhone);
   
   // Store user session
   if (typeof window !== 'undefined') {
@@ -205,6 +228,13 @@ export const authenticate = async (
   }
   
   return { success: true, user: userData.user };
+};
+
+export const authenticateByPhone = async (
+  phoneNumber: string,
+  password: string
+): Promise<{ success: boolean; user?: User; error?: string }> => {
+  return authenticate(phoneNumber, password);
 };
 
 export const socialAuthenticate = async (

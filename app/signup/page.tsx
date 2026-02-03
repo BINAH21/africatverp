@@ -3,7 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '@/components/Logo';
-import { Phone, User, AlertCircle, Loader2, Globe, ChevronDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { User, Lock, AlertCircle, Loader2, Globe, ChevronDown, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
@@ -17,21 +17,46 @@ export default function SignupPage() {
   const router = useRouter();
   const { setUser, checkAuth } = useAppStore();
   
+  const [signupMethod, setSignupMethod] = useState<'google' | 'manual'>('google');
   const [formData, setFormData] = useState({
-    name: '',
-    phoneNumber: '',
-    role: 'User',
+    username: '',
+    password: '',
+    confirmPassword: '',
     terms: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [approvalSent, setApprovalSent] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleGoogleSignup = async () => {
+    setError(null);
+    setLoading(true);
+    
+    try {
+      // Redirect to Google OAuth initiation endpoint
+      window.location.href = `/api/auth/oauth/google`;
+    } catch (err) {
+      setError('Failed to initiate Google sign-up. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const handleManualSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
-    if (!formData.name || !formData.phoneNumber) {
+    if (!formData.username || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all required fields');
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
 
@@ -43,26 +68,32 @@ export default function SignupPage() {
     setLoading(true);
     
     try {
-      // Phone number registration logic would go here
-      // For now, we'll just show an error that this feature is coming soon
-      setError('Phone number registration is coming soon. Please use Google sign-up.');
-      setLoading(false);
+      // Simulate sending approval code/link
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      
+      // Generate approval code (6 digits)
+      const approvalCode = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // In production, send this code via email/SMS
+      // For now, we'll store it and show it to the user
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pendingApproval', JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+          approvalCode,
+          timestamp: Date.now(),
+        }));
+      }
+      
+      setApprovalSent(true);
+      setError(null);
     } catch (err) {
       setError('An error occurred. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setError(null);
-    
-    try {
-      // Redirect to Google OAuth initiation endpoint
-      window.location.href = `/api/auth/oauth/google`;
-    } catch (err) {
-      setError('Failed to initiate Google sign-up. Please try again.');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-white flex">
@@ -192,7 +223,7 @@ export default function SignupPage() {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{decodeURIComponent(urlError)}</p>
                       <p className="text-xs mt-1 text-yellow-700">
-                        OAuth is optional. You can still create an account with phone number.
+                        You can also create an account manually with username and password.
                       </p>
                     </div>
                   </motion.div>
@@ -216,130 +247,210 @@ export default function SignupPage() {
               )}
             </AnimatePresence>
 
-            {/* Signup Form */}
-            <motion.form
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              onSubmit={handleSubmit}
-              className="space-y-5"
-            >
-              {/* Full Name Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Enter your full name"
-                    disabled={loading}
-                    className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
-                  />
+            {/* Signup Method Selection */}
+            {!approvalSent ? (
+              <>
+                {/* Signup Method Tabs */}
+                <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setSignupMethod('google')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      signupMethod === 'google'
+                        ? 'bg-white text-primary-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Google
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSignupMethod('manual')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      signupMethod === 'manual'
+                        ? 'bg-white text-primary-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Manual
+                  </button>
                 </div>
-              </div>
 
-              {/* Phone Number Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    type="tel"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    placeholder="Enter your phone number"
-                    disabled={loading}
-                    className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
-                  />
-                </div>
-              </div>
+                {signupMethod === 'google' ? (
+                  <div className="space-y-5">
+                    <motion.button
+                      type="button"
+                      onClick={handleGoogleSignup}
+                      disabled={loading}
+                      whileHover={!loading ? { scale: 1.02 } : {}}
+                      whileTap={!loading ? { scale: 0.98 } : {}}
+                      className="w-full bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 py-3.5 rounded-lg font-semibold text-lg shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                    >
+                      <GoogleIcon className="w-5 h-5" />
+                      Sign up with Google
+                    </motion.button>
 
-              {/* Terms & Conditions */}
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={formData.terms}
-                  onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
-                  disabled={loading}
-                  className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50"
-                />
-                <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
-                  I agree to the{' '}
-                  <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
-                    terms of service
-                  </a>{' '}
-                  and{' '}
-                  <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
-                    privacy policy
-                  </a>
-                </label>
-              </div>
-
-              {/* Submit Button */}
-              <motion.button
-                type="submit"
-                disabled={loading}
-                whileHover={!loading ? { scale: 1.02 } : {}}
-                whileTap={!loading ? { scale: 0.98 } : {}}
-                className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3.5 rounded-lg font-semibold text-lg shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Creating account...
-                  </span>
+                    <div className="text-center pt-4">
+                      <p className="text-gray-600 text-sm">
+                        Already Have an account?{' '}
+                        <Link
+                          href="/login"
+                          className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+                        >
+                          Sign in
+                        </Link>
+                      </p>
+                    </div>
+                  </div>
                 ) : (
-                  'Sign Up'
+                  <motion.form
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    onSubmit={handleManualSignup}
+                    className="space-y-5"
+                  >
+                    {/* Username Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Username
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Input
+                          type="text"
+                          value={formData.username}
+                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                          placeholder="Choose a username"
+                          disabled={loading}
+                          className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Password Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Input
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          placeholder="Create a password"
+                          disabled={loading}
+                          className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Confirm Password Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm Password
+                      </label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <Input
+                          type="password"
+                          value={formData.confirmPassword}
+                          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                          placeholder="Confirm your password"
+                          disabled={loading}
+                          className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Terms & Conditions */}
+                    <div className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id="terms"
+                        checked={formData.terms}
+                        onChange={(e) => setFormData({ ...formData, terms: e.target.checked })}
+                        disabled={loading}
+                        className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50"
+                      />
+                      <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
+                        I agree to the{' '}
+                        <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
+                          terms of service
+                        </a>{' '}
+                        and{' '}
+                        <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
+                          privacy policy
+                        </a>
+                      </label>
+                    </div>
+
+                    {/* Submit Button */}
+                    <motion.button
+                      type="submit"
+                      disabled={loading}
+                      whileHover={!loading ? { scale: 1.02 } : {}}
+                      whileTap={!loading ? { scale: 0.98 } : {}}
+                      className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3.5 rounded-lg font-semibold text-lg shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Sending approval...
+                        </span>
+                      ) : (
+                        'Sign Up'
+                      )}
+                    </motion.button>
+
+                    {/* Login Link */}
+                    <div className="text-center pt-4">
+                      <p className="text-gray-600 text-sm">
+                        Already Have an account?{' '}
+                        <Link
+                          href="/login"
+                          className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+                        >
+                          Sign in
+                        </Link>
+                      </p>
+                    </div>
+                  </motion.form>
                 )}
-              </motion.button>
-
-              {/* Social Signup */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
+              </>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-5"
+              >
+                <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-3 mb-4">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <h3 className="text-lg font-semibold text-green-900">Approval Code Sent!</h3>
+                  </div>
+                  <p className="text-sm text-green-800 mb-4">
+                    An approval code has been sent to your email. Please check your inbox and enter the code below to complete your registration.
+                  </p>
+                  <div className="bg-white p-4 rounded-lg border border-green-300">
+                    <p className="text-xs text-gray-600 mb-2">Your approval code:</p>
+                    <p className="text-2xl font-bold text-primary-600 font-mono">
+                      {typeof window !== 'undefined' && JSON.parse(localStorage.getItem('pendingApproval') || '{}').approvalCode}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">(In production, this would be sent via email/SMS)</p>
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">Or Sign Up With</span>
-                </div>
-              </div>
-
-              <div className="flex justify-center">
-                <motion.button
-                  type="button"
-                  onClick={handleGoogleSignup}
-                  disabled={loading}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
-                  whileHover={!loading ? { scale: 1.1, y: -2 } : {}}
-                  whileTap={!loading ? { scale: 0.9 } : {}}
-                  className="w-12 h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 hover:border-gray-400 flex items-center justify-center shadow-md transition-all disabled:opacity-50"
-                  title="Google"
-                >
-                  <GoogleIcon className="w-5 h-5" />
-                </motion.button>
-              </div>
-
-              {/* Login Link */}
-              <div className="text-center pt-4">
-                <p className="text-gray-600 text-sm">
-                  Already Have an account?{' '}
+                <div className="text-center">
                   <Link
                     href="/login"
                     className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
                   >
-                    Sign in
+                    Go to Login
                   </Link>
-                </p>
-              </div>
-            </motion.form>
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>

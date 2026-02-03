@@ -3,70 +3,85 @@
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '@/components/Logo';
-import { Phone, AlertCircle, Loader2, Globe, ChevronDown, ArrowLeft, ArrowRight, User } from 'lucide-react';
+import { Phone, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, Globe, ChevronDown, ArrowLeft, ArrowRight, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/Input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { socialAuthenticate } from '@/lib/auth';
+import { authenticate, authenticateByPhone, checkRateLimit } from '@/lib/auth';
 import { useAppStore } from '@/lib/store';
-import { GoogleIcon } from '@/components/SocialIcons';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { setUser, checkAuth } = useAppStore();
   
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [oauthError, setOauthError] = useState<string | null>(null);
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
 
-  // Check for OAuth errors in URL
+  // Check rate limit on email/phone change
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlError = urlParams.get('error');
-      if (urlError) {
-        setOauthError(decodeURIComponent(urlError));
-        // Clean URL
-        window.history.replaceState({}, '', window.location.pathname);
+    const identifier = loginMethod === 'email' ? email : phoneNumber;
+    if (identifier) {
+      const rateLimit = checkRateLimit(identifier);
+      if (!rateLimit.allowed) {
+        setRateLimitMessage(rateLimit.message || 'Account is locked');
+        setLockedUntil(rateLimit.lockedUntil || null);
+      } else {
+        setRateLimitMessage(null);
+        setLockedUntil(null);
       }
+    } else {
+      setRateLimitMessage(null);
+      setLockedUntil(null);
     }
-  }, []);
+  }, [email, phoneNumber, loginMethod]);
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     
-    if (!phoneNumber) {
-      setError('Please enter your phone number');
+    const identifier = loginMethod === 'email' ? email : phoneNumber;
+    
+    if (!identifier || !password) {
+      setError('Please fill in all fields');
       return;
     }
 
     setLoading(true);
     
     try {
-      // Phone number authentication logic would go here
-      // For now, we'll just show an error that this feature is coming soon
-      setError('Phone number authentication is coming soon. Please use Google sign-in.');
-      setLoading(false);
+      const result = loginMethod === 'email' 
+        ? await authenticate(email, password)
+        : await authenticateByPhone(phoneNumber, password);
+      
+      if (result.success && result.user) {
+        setUser(result.user);
+        checkAuth();
+        router.push('/dashboard');
+      } else {
+        setError(result.error || 'Login failed');
+        const rateLimit = checkRateLimit(identifier);
+        if (!rateLimit.allowed) {
+          setRateLimitMessage(rateLimit.message || 'Account is locked');
+          setLockedUntil(rateLimit.lockedUntil || null);
+        }
+      }
     } catch (err) {
       setError('An error occurred. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError(null);
-    
-    try {
-      // Redirect to Google OAuth initiation endpoint
-      window.location.href = `/api/auth/oauth/google`;
-    } catch (err) {
-      setError('Failed to initiate Google sign-in. Please try again.');
-    }
-  };
+  const isLocked = lockedUntil && lockedUntil > Date.now();
 
   return (
     <div className="min-h-screen bg-white flex">
@@ -180,35 +195,9 @@ export default function LoginPage() {
               <p className="text-gray-600 mb-8">Welcome back! Please enter your details.</p>
             </motion.div>
 
-            {/* OAuth Error Message */}
-            <AnimatePresence>
-              {oauthError && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mb-4 p-4 rounded-lg flex items-start gap-3 bg-yellow-50 border border-yellow-200 text-yellow-800"
-                >
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{oauthError}</p>
-                    <p className="text-xs mt-1 text-yellow-700">
-                      OAuth is optional. You can still sign in with email and password below.
-                    </p>
-                    <button
-                      onClick={() => setOauthError(null)}
-                      className="text-xs text-yellow-600 hover:text-yellow-800 mt-2 underline"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             {/* Error Message */}
             <AnimatePresence>
-              {error && (
+              {(error || rateLimitMessage) && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -216,43 +205,135 @@ export default function LoginPage() {
                   className="mb-4 p-4 rounded-lg flex items-center gap-3 bg-red-50 border border-red-200 text-red-700"
                 >
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <p className="text-sm">{error}</p>
+                  <p className="text-sm">{error || rateLimitMessage}</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Phone Number Form */}
+            {/* Login Method Tabs */}
+            <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setLoginMethod('email')}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  loginMethod === 'email'
+                    ? 'bg-white text-primary-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginMethod('phone')}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  loginMethod === 'phone'
+                    ? 'bg-white text-primary-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Phone
+              </button>
+            </div>
+
+            {/* Login Form */}
             <motion.form
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              onSubmit={handlePhoneSubmit}
+              onSubmit={handleSubmit}
               className="space-y-5"
             >
-              {/* Phone Number Field */}
+              {/* Email or Phone Field */}
+              {loginMethod === 'email' ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      disabled={isLocked || loading}
+                      className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
+                    <Input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="Enter your phone number"
+                      disabled={isLocked || loading}
+                      className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Password Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
+                  Password
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
                   <Input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="Enter your phone number"
-                    disabled={loading}
-                    className="pl-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    disabled={isLocked || loading}
+                    className="pl-10 pr-10 w-full border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:opacity-50"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLocked || loading}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
+              </div>
+
+              {/* Remember & Forgot */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                >
+                  Forgot password?
+                </Link>
               </div>
 
               {/* Submit Button */}
               <motion.button
                 type="submit"
-                disabled={loading}
-                whileHover={!loading ? { scale: 1.02 } : {}}
-                whileTap={!loading ? { scale: 0.98 } : {}}
+                disabled={isLocked || loading}
+                whileHover={!isLocked && !loading ? { scale: 1.02 } : {}}
+                whileTap={!isLocked && !loading ? { scale: 0.98 } : {}}
                 className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3.5 rounded-lg font-semibold text-lg shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -261,36 +342,9 @@ export default function LoginPage() {
                     Signing in...
                   </span>
                 ) : (
-                  'Sign In with Phone'
+                  'Sign In'
                 )}
               </motion.button>
-
-              {/* Social Login */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">Or Sign In With</span>
-                </div>
-              </div>
-
-              <div className="flex justify-center">
-                <motion.button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  disabled={loading}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
-                  whileHover={!loading ? { scale: 1.1, y: -2 } : {}}
-                  whileTap={!loading ? { scale: 0.9 } : {}}
-                  className="w-12 h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 hover:border-gray-400 flex items-center justify-center shadow-md transition-all disabled:opacity-50"
-                  title="Google"
-                >
-                  <GoogleIcon className="w-5 h-5" />
-                </motion.button>
-              </div>
 
               {/* Signup Link */}
               <div className="text-center pt-4">
