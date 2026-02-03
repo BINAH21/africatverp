@@ -10,7 +10,7 @@ import {
   ChevronDown, ChevronUp, Eye, Play, Pause, AlertCircle, FileText,
   Package, Code, FileCode, Wrench, Upload, MessageSquare,
   ArrowRight, ArrowLeft, Calendar, Star, Award, Users, FileCheck,
-  FileX, CheckCircle2, X, Save, X as XIcon, Sparkles, Brush,
+  FileX, CheckCircle, CheckCircle2, X, Save, X as XIcon, Sparkles, Brush,
   Type, ImageIcon, Film, Zap, PenTool, BarChart3
 } from 'lucide-react';
 import { useGraphicsDesignStore, GraphicsProject, DesignProgram } from '@/lib/graphics-design-store';

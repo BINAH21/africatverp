@@ -120,7 +120,7 @@ export default function SignupPage() {
               transition={{ delay: 0.4 }}
             >
               <h2 className="text-5xl md:text-6xl font-bold text-white mb-4 leading-tight">
-                Learn From World's Best
+                Learn From World&apos;s Best
                 <br />
                 <span className="flex items-center gap-2">
                   Instructors

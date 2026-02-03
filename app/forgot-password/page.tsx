@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
                 <span className="text-orange-200">Password</span>
               </h2>
               <p className="text-xl text-white/90 mb-8">
-                No worries! We'll help you get back into your account.
+                No worries! We&apos;ll help you get back into your account.
               </p>
             </motion.div>
 
@@ -163,7 +163,7 @@ export default function ForgotPasswordPage() {
             >
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Forgot Password?</h1>
               <p className="text-gray-600 mb-8">
-                No worries! Enter your email and we'll send you reset instructions.
+                No worries! Enter your email and we&apos;ll send you reset instructions.
               </p>
             </motion.div>
 
@@ -195,7 +195,7 @@ export default function ForgotPasswordPage() {
                   <div>
                     <p className="text-sm font-semibold">Email sent successfully!</p>
                     <p className="text-xs mt-1">
-                      We've sent password reset instructions to <strong>{email}</strong>. Please check your inbox.
+                      We&apos;ve sent password reset instructions to <strong>{email}</strong>. Please check your inbox.
                     </p>
                   </div>
                 </motion.div>
@@ -263,7 +263,7 @@ export default function ForgotPasswordPage() {
                     <CheckCircle className="w-10 h-10 text-green-600" />
                   </motion.div>
                   <p className="text-gray-600 mb-6">
-                    If an account exists with this email, you'll receive password reset instructions shortly.
+                    If an account exists with this email, you&apos;ll receive password reset instructions shortly.
                   </p>
                   <Link
                     href="/login"

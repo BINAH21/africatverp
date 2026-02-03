@@ -48,7 +48,7 @@ export default function ErrorPage() {
           transition={{ delay: 0.4 }}
           className="text-gray-600 mb-8"
         >
-          We're sorry, but something unexpected happened. Please try again later.
+          We&apos;re sorry, but something unexpected happened. Please try again later.
         </motion.p>
 
         {/* Action Buttons */}
